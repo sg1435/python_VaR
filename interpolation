@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 18 15:42:26 2020
+
+@author: A61770
+"""
+
+import pandas as pd
+from var import formulas
+sd = pd.read_csv("J:\FileShare\PYTHON-VaR\output\ocp_pv.csv", sep=";", nrows=251)
+sd['Date'] = pd.to_datetime(sd['Date'], format='%d.%m.%Y')
+sd = sd.sort_values(by='total_pl')
+sd = sd.reset_index(drop=True)
+formulas.var_hesaplama(sd["total_pl"], 0.99, sd['Date'])
+sd.to_csv("J:\FileShare\PYTHON-VaR\output\sd.csv", sep = ";", index=False)
