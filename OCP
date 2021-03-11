@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 18 12:56:42 2020
+
+@author: A61770
+"""
+import pandas as pd
+from var import formulas
+kur = pd.read_csv("J:\FileShare\PYTHON-VaR\data\historical_kur.csv", sep=";", nrows=253)
+ocp_position = pd.read_csv("J:\FileShare\PYTHON-VaR\data\ocp_data.csv", sep=";")
+quantity = ocp_position['Quantity']
+profit_loss = pd.read_csv("J:\FileShare\PYTHON-VaR\data\pl.csv", sep=";")
+profit_loss['Date']=kur['Date']
+formulas.pl_hesaplama(kur, quantity, profit_loss)
+formulas.pv_toplam(profit_loss)
+profit_loss.to_csv("J:\FileShare\PYTHON-VaR\output\ocp_pv.csv", sep = ";", index=False)
+
+
+
+#sd['Date']=pd.to_datetime(sd['Date'],format = '%d.%m.%Y')
