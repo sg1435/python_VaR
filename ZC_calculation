@@ -1,0 +1,28 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Nov 19 23:50:31 2020
+
+@author: A61770
+"""
+from var import formulas
+import pandas as pd
+import numpy as np
+rt = '30/09/2020'
+ZeroCoupon_data =  pd.read_csv("J:\\Finansbank\\VaR Calculation\\2020\\September-20\\20200930\\fMR Files\\30092020I_BondsZC.csv", header = None, sep=",", usecols=[3,1,4,6,8,12,13])
+ycdata_trygov =  pd.read_csv("J:\FileShare\PYTHON-VaR\data\pll.csv", sep =";")
+ycdata_trygov['Value'] = [np.log(1 + i) for i in ycdata_trygov['Value']]
+fiyat =  pd.read_excel("J:\FileShare\PYTHON-VaR\data\BVAL_bono Manuel Upload-200930.xlsx", sep=";")
+ZeroCoupon_data = ZeroCoupon_data.rename(columns = {4:"ISIN"})
+ZeroCoupon_data = pd.merge(ZeroCoupon_data, fiyat,  on = 'ISIN' ,  how ='left') 
+ZeroCoupon_data[8] = pd.to_datetime(ZeroCoupon_data[8], format='%Y/%m/%d')
+rt = pd.to_datetime(rt, format='%d/%m/%Y')
+dtm = [(i - rt).days for i in ZeroCoupon_data[8]]
+yc = []
+formulas.dtm_yc_calc(ycdata_trygov['Days To Maturity'], ycdata_trygov['Value'], dtm, yc)
+data_nominal = ZeroCoupon_data[13]
+yc_data_dtm = ycdata_trygov['Days To Maturity']
+yc_data_value = ycdata_trygov['Value']
+zc_pv = []
+zc_pv = formulas.zc_pv(ZeroCoupon_data[13], dtm, yc_data_dtm, yc_data_value, ZeroCoupon_data['Fiyat'])
+zc_pv
+
