@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 22 17:50:14 2020
+
+@author: A61770
+"""
+
+'''
+FXOptEuropean	9816889	TRY	USD	22.01.2021	0	TRUE	125544	Buy	7.9
+
+s0	r	rf	
+7.6565	0.140130448	0.002109913
+
+sigma
+0.161913209
+
+superderivatives pv = 10550.97497
+'''
+#std normal distribution
+#scipy.stats.norm(0, 1).cdf(4.955659172)
+#bulmamız gereken pv = 16714990.281326836// bu finecus result ile karşılaştırıldı ve tam tuttu.
+
+import scipy.stats
+import math
+from var import formulas
+import pandas as pd
+
+s0 = [7.6565, 6.234]
+k = [7.9, 8.2]
+mvol = [0.12, 0.1619132093]
+rf = [0.01231, 0.002109913]
+r = [0.01234, 0.140130448]
+dtm =  [12, 31]
+nom = [12314,125544]
+condition = [True, False]
+pvs = []
+
+i = 0
+while i < 2: 
+    d1 = (math.log(s0[i] / k[i]) + (dtm[i] / 365) * 
+          (r[i] - rf[i] * mvol[i]**2 / 2) ) / (mvol[i] * ( (dtm[i] / 365)**(1/2)))
+    d2 = d1 - mvol[i] * math.sqrt(dtm[i]/365)
+    call = nom[i] * (s0[i] * (math.e**(-rf[i] * dtm[i] / 365)) * 
+              scipy.stats.norm(0, 1).cdf(d1) - k[i] * (math.e ** (-r[i] * dtm[i] / 365)) * scipy.stats.norm(0, 1).cdf(d2))
+    put = nom[i] * (k[i] * math.e**(-r[i] * dtm[i] / 365) * scipy.stats.norm(0, 1).cdf(-d2) - s0[i] * math.e ** (-rf[i] * dtm[i] / 365) * scipy.stats.norm(0, 1).cdf(-d1))
+    pv = formulas.opt_pv(call, put, condition[i])
+    pvs.append(pv)
+    i = i + 1
+    
