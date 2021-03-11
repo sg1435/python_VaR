@@ -1,0 +1,99 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 22 19:20:56 2020
+
+@author: A61770
+"""
+import datetime
+import pandas as pd
+from var import formulas
+
+'''
+data = pd.read_excel("J:\FileShare\PYTHON-VaR\data\OIS verileri.xlsx", sep=";")
+maturity_date = data['Maturity']
+nominal = data['Nominal']
+
+nominal[0]
+maturity_date[0]
+'''
+
+tarih = datetime.datetime(2020, 9, 30)
+maturity_date = datetime.datetime(2021, 9 ,30)
+
+coupon_rate = 0.1
+
+cash_flow_date_list = []
+formulas.cash_flow_set(tarih, maturity, 365, cash_flow_date_list)
+
+cf_dtm_list = []
+formulas.cash_flow_dtm_calculation(cash_flow_date_list, cf_dtm_list)
+
+cash_flow_list = []
+formulas.cash_flow_calculation(nominal, coupon_rate, cf_dtm_list, cash_flow_list)
+
+dtm_asıl_list = [(i - tarih).days for i in cash_flow_date_list]
+
+'''
+PV HESAPLAMA
+'''
+
+curve = pd.read_csv("J:\FileShare\PYTHON-VaR\data\curve_new.csv", sep=";", nrows=14)
+
+values = curve["Value"]
+dtm_list_raw = curve["Days To Maturity"]
+
+discount_rates = [formulas.serhat(i, dtm_list_raw, values) for i in dtm_asıl_list]
+
+final_pv = []
+for i in range(len(cash_flow_list)):
+    final_pv.append(cash_flow_list[i] * discount_rates[i])
+
+'''
+formüller silinecek formulas'A kaydedildi
+
+def serhat(dtm, xs, ys):
+    i = 0
+    y = 0
+    while i < len(xs) - 1:
+        if dtm <= xs[i]:
+            y = ys[i]
+            y = math.e**(-math.log(y + 1) * dtm / 365)
+            break
+        elif dtm < xs[i + 1]:
+            y = ys[i] + (dtm - xs[i]) * (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])
+            y = math.e**(-math.log(y + 1) * dtm / 365)
+            break
+        else:
+            i = i + 1
+    return y
+            
+
+def cash_flow_calculation(nominal, coupon_rate, cf_dtm_list, cash_flow_list):
+    i = 0
+    while i < len(cf_dtm_list) + 1:
+        cash_flow = nominal * ((1 + coupon_rate)**(cf_dtm_list[i] / 365) - 1)
+        cash_flow_list.append(cash_flow)
+        i = i + 1
+
+
+def cash_flow_set(report_date, maturity_date, coupon_frequency, cash_flow_list):
+    import datetime
+    frequency_days = 365 / coupon_frequency
+    i = 0
+    cash_flow = report_date
+    asıl_dtm = (maturity_date - report_date).days / 365
+    while i < asıl_dtm * coupon_frequency:
+        cash_flow = cash_flow + datetime.timedelta(frequency_days)
+        cash_flow_list.append(cash_flow)
+        i = i + 1
+
+
+def cash_flow_dtm_calculation(cash_flow, dtm_list):
+    uzunluk = len(cash_flow) + 1
+    i = 0 
+    while i < uzunluk:
+        dtm = (cash_flow[i + 1] - cash_flow[i]).days
+        dtm_list.append(dtm)
+        i = i + 1
+        
+'''
