@@ -1,0 +1,175 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 18 13:04:58 2020
+
+@author: A61770
+"""
+'''
+opsiyon formülleri
+
+'''
+def opt_pv(call, put, condition):
+    if condition == True:
+        pv = call
+    elif condition == False:
+        pv = put
+    else:
+        print("unknown status")
+    return pv
+
+'''
+
+OIS ÇALIŞMASI -- cash flow dates, nominal and pv calculation
+
+'''
+def serhat(dtm, xs, ys):
+    import math
+    i = 0
+    y = 0
+    while i < len(xs) - 1:
+        if dtm <= xs[i]:
+            y = ys[i]
+            y = math.e**(-math.log(y + 1) * dtm / 365)
+            break
+        elif dtm < xs[i + 1]:
+            y = ys[i] + (dtm - xs[i]) * (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])
+            y = math.e**(-math.log(y + 1) * dtm / 365)
+            break
+        else:
+            i = i + 1
+    return y
+
+def cash_flow_calculation(nominal, coupon_rate, cf_dtm_list, cash_flow_list):
+    i = 0
+    while i < len(cf_dtm_list) + 1:
+        cash_flow = nominal * ((1 + coupon_rate)**(cf_dtm_list[i] / 365) - 1)
+        cash_flow_list.append(cash_flow)
+        i = i + 1
+
+def cash_flow_set(report_date, maturity_date, coupon_frequency, cash_flow_list):
+    import datetime
+    frequency_days = 365 / coupon_frequency
+    i = 0
+    cash_flow = report_date
+    asıl_dtm = (maturity_date - report_date).days / 365
+    while i < asıl_dtm * coupon_frequency:
+        cash_flow = cash_flow + datetime.timedelta(frequency_days)
+        cash_flow_list.append(cash_flow)
+        i = i + 1
+
+def cash_flow_dtm_calculation(cash_flow, dtm_list):
+    import datetime
+    uzunluk = len(cash_flow) + 1
+    i = 0 
+    while i < uzunluk:
+        dtm = (cash_flow[i + 1] - cash_flow[i]).days
+        dtm_list.append(dtm)
+        i = i + 1
+
+#OCP P&L'lerini hesaplamak için
+def pl_hesaplama(kur, quantity, profit_loss):
+    p = 0
+    while p < 22:
+        i = 0
+        while i < 252:
+            kur_change = float(kur.iloc[i, p + 1]) / float(kur.iloc[i + 1, p+1]) - 1
+            pl = float(kur.iloc[0, p + 1]) * kur_change * quantity[p]
+            profit_loss.iloc[i, p+1] = pl
+            i = i + 1
+        p = p + 1
+        
+#OCP PV'LERİNİ TARİH BAZINDA TOPLAMAK İÇİN     
+        '''
+        BURADAKİ 23 kurlardan gelen currency sayısı, 
+        eğer yeni currency gelirse bunu artırmak lazım
+        '''
+def pv_toplam(profit_loss):
+    pl_total = []
+    i = 0
+    while i <= len(profit_loss) - 1:
+        a = sum(profit_loss.iloc[i,1:23])
+        pl_total.append(a)
+        i = i + 1
+    profit_loss['total_pl'] = pl_total
+    
+#sıralama yapmak için
+def ranking(data):
+    a = 1
+    i = 0
+    rank = []
+    while i <= len(data):
+        rank.append(a)
+        a = a + 1
+        i = i + 1
+    data['rank'] = rank
+#interpolation
+def interpolation(x, x1, x2, y2, y1, y):
+    y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
+    return y
+#dtm değeri interp
+def dtm_yc_calc(xs, ys, dtm, serhat):
+    i = 0
+    guven = 0
+    while i < len(dtm) - 1:
+        if dtm[i] <= xs[i]:
+            guven = float(ys[i])
+        elif dtm[i] <= xs[i + 1]:
+            guven = ys[i] + (dtm[i] - float(xs[i])) * (ys[i + 1] - ys[i]) / (float(xs[i + 1]) - float(xs[i]))
+        else:
+            guven = 0
+        serhat.append(guven)
+        i = i + 1
+    return serhat
+
+#market adjustment ile pv hesaplama
+def zc_pv(data_nominal, data_dtm, yc_data_dtm, yc, fiyat):
+    import numpy as np
+    from math import e
+    i = 0
+    pvs = []
+    while i < len(data_nominal):
+        dtm = data_dtm[i]
+        market_adj = np.log((fiyat[i]/100)**(-365/dtm))-yc[i]
+        pv = data_nominal[i] * e ** (-(yc[i] + market_adj) * dtm / 365)
+        i = i + 1
+        pvs.append(pv)
+    return pvs
+
+#interpolasyon funtion
+def var_hesaplama(pl, conf_level, date_list):
+    sira = date_list.rank(method='first')
+    sira = [int(len(sira)-i+1) for i in sira]
+    lamb = 0.97
+    numdays = len(date_list)
+    weight = [(lamb**(i-1))*((1-lamb)/(1-(lamb**numdays))) for i in sira]
+    cum = []
+    n = len(weight) - 1
+    i = 0
+    cum.append(weight[n])
+    while n > 0:
+        sr = weight[n-1] + cum[i]
+        cum[:0] = [sr]
+        n = n-1
+    i = 0
+    dn = []    
+    while i < len(cum) - 1:
+        if cum[i] > conf_level:
+            sr = 1
+        else:
+            sr = 0
+        dn.append(sr)
+        i = i + 1
+    x = 0
+    bir = []
+    while x < len(dn) - 1:
+        a = dn[x] - dn[x + 1]
+        bir.append(a)
+        x = x + 1
+    i = 0
+    var = []
+    while i < len(bir) - 1:
+        a = bir[i] * (pl[i + 1] + ( conf_level - cum[i + 1] ) * ( pl[i] - pl[i + 1] ) / ( cum[i] - cum[i + 1] ) )
+        var.append(a)
+        i = i + 1
+    sonuc = sum(var)
+    return sonuc
