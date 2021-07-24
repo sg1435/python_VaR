@@ -2,14 +2,13 @@
 """
 Created on Tue Dec 22 19:20:56 2020
 
-@author: A61770
 """
 import datetime
 import pandas as pd
 from var import formulas
 
 '''
-data = pd.read_excel("J:\FileShare\PYTHON-VaR\data\OIS verileri.xlsx", sep=";")
+data = pd.read_excel("J:\data\OIS verileri.xlsx", sep=";")
 maturity_date = data['Maturity']
 nominal = data['Nominal']
 
