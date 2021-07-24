@@ -2,7 +2,6 @@
 """
 Created on Wed Nov 18 12:56:42 2020
 
-@author: A61770
 """
 import pandas as pd
 from var import formulas
