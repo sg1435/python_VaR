@@ -2,7 +2,6 @@
 """
 Created on Wed Nov 18 15:42:26 2020
 
-@author: A61770
 """
 
 import pandas as pd
